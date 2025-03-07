@@ -5,8 +5,8 @@ import logging
 import random
 import os
 import re
-import jso
-import aiofilesn
+import json
+import aiofiles
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
 from config import DB_CONFIG, BASE_URL
