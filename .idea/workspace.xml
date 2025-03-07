@@ -5,11 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2dcf6b0c-f42c-4909-b8c2-bf379d7f07f2" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/menu_items.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/parser.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/СoffeemaniaBot.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/СoffeemaniaBot.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu_items.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/parser.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -26,6 +26,12 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/Et3rnalDespa1r/NIS_Bot.git",
+    "accountId": "21d6bccb-5536-4a8c-900e-92e82b6e6048"
+  }
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 8
 }</component>
@@ -35,20 +41,27 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.main.executor": "Run",
-    "Python.parser.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "node.js.detected.package.eslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.config.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.parser.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  },
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;postgresql&quot;
+    ]
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -69,6 +82,60 @@
       <workItem from="1739115841311" duration="91000" />
       <workItem from="1739115941529" duration="26000" />
       <workItem from="1739115990521" duration="546000" />
+      <workItem from="1739128860166" duration="2206000" />
+      <workItem from="1739132880280" duration="20000" />
+      <workItem from="1739188465638" duration="9000" />
+      <workItem from="1739188485176" duration="1292000" />
+      <workItem from="1739190551580" duration="8092000" />
+      <workItem from="1739268541003" duration="142000" />
+      <workItem from="1739297433793" duration="11000" />
+      <workItem from="1739303694883" duration="626000" />
+      <workItem from="1739739345681" duration="7000" />
+      <workItem from="1739742827632" duration="2705000" />
+      <workItem from="1739774153886" duration="1222000" />
+      <workItem from="1739809410693" duration="1069000" />
+      <workItem from="1740401565870" duration="2418000" />
+      <workItem from="1740730725338" duration="576000" />
+      <workItem from="1741108663727" duration="343000" />
+      <workItem from="1741109066477" duration="9000" />
+      <workItem from="1741110922569" duration="5000" />
+      <workItem from="1741110945636" duration="4000" />
+      <workItem from="1741114017142" duration="187000" />
+      <workItem from="1741115243162" duration="6000" />
+      <workItem from="1741115258921" duration="3000" />
+      <workItem from="1741119542569" duration="689000" />
+      <workItem from="1741120244987" duration="5000" />
+      <workItem from="1741120441959" duration="4000" />
+      <workItem from="1741120869439" duration="4000" />
+      <workItem from="1741121002593" duration="56000" />
+      <workItem from="1741121452012" duration="147000" />
+      <workItem from="1741121612459" duration="9000" />
+      <workItem from="1741121684383" duration="6000" />
+      <workItem from="1741121707760" duration="3000" />
+      <workItem from="1741205900592" duration="18000" />
+      <workItem from="1741205928418" duration="70000" />
+      <workItem from="1741206026797" duration="6000" />
+      <workItem from="1741206385466" duration="341000" />
+      <workItem from="1741206730013" duration="1511000" />
+      <workItem from="1741208288968" duration="11391000" />
+      <workItem from="1741251198378" duration="433000" />
+      <workItem from="1741252491838" duration="96000" />
+      <workItem from="1741257565787" duration="241000" />
+      <workItem from="1741257841349" duration="8000" />
+      <workItem from="1741288287803" duration="335000" />
+      <workItem from="1741288798574" duration="174000" />
+      <workItem from="1741336390450" duration="48000" />
+      <workItem from="1741339418494" duration="48000" />
+      <workItem from="1741343702908" duration="190000" />
+      <workItem from="1741343973729" duration="34000" />
+      <workItem from="1741345618360" duration="57000" />
+      <workItem from="1741355253179" duration="20000" />
+      <workItem from="1741359828046" duration="30000" />
+      <workItem from="1741360779202" duration="12000" />
+      <workItem from="1741360805274" duration="7000" />
+      <workItem from="1741360845480" duration="3000" />
+      <workItem from="1741361986738" duration="1468000" />
+      <workItem from="1741386262015" duration="1511000" />
     </task>
     <servers />
   </component>
@@ -76,7 +143,8 @@
     <option name="version" value="3" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/offeemaniaBot$main.coverage" NAME="main Coverage Results" MODIFIED="1739116147772" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/offeemaniaBot$parser.coverage" NAME="parser Coverage Results" MODIFIED="1739115997477" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/offeemaniaBot$main.coverage" NAME="main Coverage Results" MODIFIED="1741387137549" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/offeemaniaBot$parser.coverage" NAME="parser Coverage Results" MODIFIED="1741217499210" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/offeemaniaBot$config.coverage" NAME="config Coverage Results" MODIFIED="1739303694914" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
