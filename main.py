@@ -11,37 +11,35 @@ from aiogram.types import (
     FSInputFile,
     InlineKeyboardMarkup,
     InlineKeyboardButton,
+    ReplyKeyboardRemove,
 )
 from aiogram.filters import Command
-from config import BOT_TOKEN, DB_CONFIG  # Импорт конфигурации
-from parser import periodic_parser  # Импорт функции периодического парсера
+from config import BOT_TOKEN, DB_CONFIG_1
+from parser import periodic_parser
 
-# Логирование
+
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Инициализация бота и диспетчера
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
-
-# Глобальная переменная для пула соединений с БД
 db_pool = None
 
 
-# Инициализация соединения с БД
 async def connect_db():
     global db_pool
     if db_pool is None:
-        db_pool = await asyncpg.create_pool(**DB_CONFIG)
+        db_pool = await asyncpg.create_pool(**DB_CONFIG_1)
 
 
-# Установка команд меню
 async def set_main_menu():
-    commands = [BotCommand(command="/menu", description="📜 Меню ресторана")]
+    commands = [
+        BotCommand(command="/menu", description="📜 Меню ресторана"),
+        BotCommand(command="/info", description="ℹ️ О ресторане")
+    ]
     await bot.set_my_commands(commands)
 
 
-# Главное меню (reply-клавиатура)
 def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
@@ -49,22 +47,22 @@ def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
             [KeyboardButton(text="ℹ️ О ресторане")],
         ],
         resize_keyboard=True,
+        one_time_keyboard=True,
     )
     return keyboard
 
 
-# Клавиатура с категориями (reply-клавиатура)
 async def get_categories_keyboard() -> ReplyKeyboardMarkup:
     async with db_pool.acquire() as db:
         categories = await db.fetch("SELECT DISTINCT category FROM menu_items")
     keyboard = ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text=cat["category"])] for cat in categories],
         resize_keyboard=True,
+        one_time_keyboard=True,
     )
     return keyboard
 
 
-# Инлайн-клавиатура с блюдами
 async def get_dishes_inline_keyboard(category: str) -> InlineKeyboardMarkup:
     async with db_pool.acquire() as db:
         rows = await db.fetch("SELECT id, name FROM menu_items WHERE category = $1", category)
@@ -75,21 +73,18 @@ async def get_dishes_inline_keyboard(category: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-# Команда /start
 @dp.message(Command("start"))
 async def start_command(message: Message):
     keyboard = get_main_menu_keyboard()
     await message.answer("☕ Привет! Добро пожаловать в Coffeemania! Выберите действие:", reply_markup=keyboard)
 
 
-# Обработчик кнопки "📜 Меню ресторана"
 @dp.message(lambda msg: msg.text == "📜 Меню ресторана")
 async def menu_command(message: Message):
     keyboard = await get_categories_keyboard()
     await message.answer("📜 Выберите категорию:", reply_markup=keyboard)
 
 
-# Обработчик кнопки "ℹ️ О ресторане"
 @dp.message(lambda msg: msg.text == "ℹ️ О ресторане")
 async def about_restaurant(message: Message):
     response = (
@@ -99,7 +94,6 @@ async def about_restaurant(message: Message):
     await message.answer(response)
 
 
-# Отправка информации о блюде
 async def send_dish_info(message: Message, dish_record):
     dish_text = (
         f"🍽 *{dish_record['name']}*\n"
@@ -109,33 +103,61 @@ async def send_dish_info(message: Message, dish_record):
         f"🥑 Жиры: {dish_record.get('fats', 'N/A')}\n"
         f"🍞 Углеводы: {dish_record.get('carbohydrates', 'N/A')}\n"
         f"⚖️ Вес: {dish_record.get('weight', 'N/A')}\n\n"
-        f"📖 *Описание:*\n{dish_record['description'][:1000]}"
+        f"📖 *Описание:*\n{dish_record['description'][:1000]}\n\n"
+        f"⚠️ *Аллергены:*{dish_record['allergens'][10:1000]}\n\n"
+        f"🛒 Присутствует в наличии: {"да" if dish_record['availability'] else "нет"}"
     )
-    photo_path = dish_record["image_url"]
+    back_button = InlineKeyboardButton(
+        text="🔙 Назад", callback_data=f"back_to_category:{dish_record['category']}"
+    )
+    back_kb = InlineKeyboardMarkup(inline_keyboard=[[back_button]])
 
+    photo_path = dish_record["image_url"]
     if os.path.exists(photo_path) and os.path.isfile(photo_path):
         photo = FSInputFile(photo_path)
-        await message.answer_photo(photo=photo, caption=dish_text, parse_mode="Markdown")
+        await message.answer_photo(
+            photo=photo,
+            caption=dish_text,
+            parse_mode="Markdown",
+            reply_markup=back_kb
+        )
     else:
-        await message.answer(dish_text, parse_mode="Markdown")
+        await message.answer(
+            dish_text,
+            parse_mode="Markdown",
+            reply_markup=back_kb
+        )
 
-
-# Обработчик выбора категории
+user_selected_category = {}
 @dp.message()
 async def handle_category_selection(message: Message):
-    category = message.text
+    text = message.text.strip()
     async with db_pool.acquire() as db:
-        dishes = await db.fetch("SELECT id, name FROM menu_items WHERE category = $1", category)
+        dishes = await db.fetch("SELECT id, name FROM menu_items WHERE category = $1", text)
 
-    if not dishes:
-        await message.answer("❌ Категория не найдена. Попробуйте снова.")
-        return
+    if dishes:
+        user_selected_category[message.from_user.id] = text
+        inline_kb = await get_dishes_inline_keyboard(text)
+        await message.answer(
+            f"🍽 Меню категории *{text}*:",
+            reply_markup=inline_kb,
+            parse_mode="Markdown"
+        )
+    else:
+        category = user_selected_category.get(message.from_user.id)
+        if category:
+            async with db_pool.acquire() as db:
+                dish = await db.fetchrow(
+                    "SELECT * FROM menu_items WHERE LOWER(name) = LOWER($1) AND category = $2",
+                    text, category
+                )
+            if dish:
+                await send_dish_info(message, dish)
+            else:
+                await message.answer("❌ Блюдо не найдено в выбранной категории. Попробуйте снова.")
+        else:
+            await message.answer("❌ Сначала выберите категорию из меню.")
 
-    inline_kb = await get_dishes_inline_keyboard(category)
-    await message.answer(f"🍽 Меню категории *{category}*:", reply_markup=inline_kb, parse_mode="Markdown")
-
-
-# Обработчик выбора блюда
 @dp.callback_query(lambda c: c.data.startswith("dish:"))
 async def dish_callback_handler(callback: types.CallbackQuery):
     dish_id = int(callback.data.split(":")[1])
@@ -150,24 +172,38 @@ async def dish_callback_handler(callback: types.CallbackQuery):
     await callback.answer()
 
 
-# Кнопка "Назад"
 @dp.callback_query(lambda c: c.data == "back_to_categories")
 async def back_callback_handler(callback: types.CallbackQuery):
+
+    await callback.message.edit_reply_markup(reply_markup=None)
+
     keyboard = await get_categories_keyboard()
     await callback.message.answer("📜 Выберите категорию:", reply_markup=keyboard)
     await callback.answer()
 
 
-# Запуск бота
+@dp.callback_query(lambda c: c.data.startswith("back_to_category:"))
+async def back_to_category_handler(callback: types.CallbackQuery):
+    _, category = callback.data.split(":", 1)
+    inline_kb = await get_dishes_inline_keyboard(category)
+
+    await bot.send_message(
+        chat_id=callback.message.chat.id,
+        text=f"🍽 Меню категории *{category}*:",
+        reply_markup=inline_kb,
+        parse_mode="Markdown"
+    )
+    await callback.answer()
+
+
+
 async def start_bot():
     await connect_db()
     await set_main_menu()
     await dp.start_polling(bot)
 
 
-# Запуск парсера и бота
 async def main():
-    # Запускаем парсер в фоне
     asyncio.create_task(periodic_parser())
     await start_bot()
 

@@ -9,7 +9,7 @@ import json
 import aiofiles
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
-from config import DB_CONFIG, BASE_URL
+from config import DB_CONFIG_1, BASE_URL
 
 MENU_URL = f"{BASE_URL}/menu"
 
@@ -152,8 +152,8 @@ async def parse_dish(url, session, category, semaphore):
                     data = json.loads(script_tag.string)
                     if isinstance(data, dict) and data.get("@type") == "Product":
                         sku = int(data.get("sku"))
-                except Exception as e:
-                    logging.warning(f"Ошибка парсинга JSON-LD для SKU на {url}: {e}")
+                except Exception as Except:
+                    logging.warning(f"Ошибка парсинга JSON-LD для SKU на {url}: {Except}")
 
             item_info = soup.find("div", id="itemInfo")
             if not item_info:
@@ -192,7 +192,7 @@ async def parse_dish(url, session, category, semaphore):
                     composition = clean_text(composition_p.text)
 
             allergens_section = item_info.find("p", style="font-style: italic")
-            allergens = clean_text(allergens_section.text) if allergens_section else "Нет информации"
+            allergens = clean_text(allergens_section.text) if allergens_section else "Аллергены: отсутствуют"
 
             img_url = "Нет фото"
 
@@ -235,8 +235,8 @@ async def parse_dish(url, session, category, semaphore):
                 "В наличии": True,
                 "TimeTable": timetable
             }
-        except Exception as e:
-            logging.exception(f"Ошибка при разборе страницы {url}: {e}")
+        except Exception as Except:
+            logging.exception(f"Ошибка при разборе страницы {url}: {Except}")
             return None
 
 
@@ -275,7 +275,7 @@ async def save_dishes_to_db(db_pool, dishes: list):
         price = dish.get("Цена", "Нет цены")
         description = dish.get("Описание", "Нет описания")
         composition = dish.get("Состав", "Нет состава")
-        allergens = dish.get("Аллергены", "Нет информации")
+        allergens = dish.get("Аллергены", "Аллергены: отсутствуют")
         img_url = dish.get("Фото", "Нет фото")
         availability = dish.get("В наличии", True)
         nutrition = dish.get("Пищевая ценность", {})
@@ -322,7 +322,7 @@ async def main():
             if dish:
                 parsed_menu[dish["Категория"]].append(dish)
 
-    db_pool = await asyncpg.create_pool(**DB_CONFIG, min_size=1, max_size=10)
+    db_pool = await asyncpg.create_pool(**DB_CONFIG_1, min_size=1, max_size=10)
     for category, dishes in parsed_menu.items():
         await save_dishes_to_db(db_pool, dishes)
 
@@ -345,7 +345,7 @@ async def main():
     await db_pool.close()
 
 
-async def periodic_parser(interval=3600):
+async def periodic_parser(interval=36000):
     while True:
         logging.info("Запуск цикла парсинга...")
         await main()
