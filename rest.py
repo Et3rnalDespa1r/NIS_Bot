@@ -1,35 +1,72 @@
 import logging
 import json
+import os
 import requests
+import aiofiles
+import aiohttp
 import asyncpg
 from bs4 import BeautifulSoup
 import asyncio
-from config import DB_CONFIG_2  # Импортируем параметры подключения из config.py
+import random
+from config import DB_CONFIG
 
-# Настройка логирования
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# Константы
 BASE_URL = "https://coffeemania.ru"
 REST_URL = f"{BASE_URL}/restaurants"
 
+MAX_CONCURRENT_REQUESTS = 20
+FETCH_DELAY_RANGE = (0.01, 0.02)
 
-def fetch_restaurant_data(url):
-    """
-    Получает данные ресторана по переданному URL.
-    """
+async def fetch_with_delay(url, session, semaphore):
+    async with semaphore:
+        await asyncio.sleep(random.uniform(*FETCH_DELAY_RANGE))
+        async with session.get(url, timeout=10) as response:
+            response.raise_for_status()
+            return await response.text()
+
+async def download_image(restaurant_image, session, name, semaphore):
+    safe_restaurant_name = "".join(c for c in name if c.isalnum() or c in " _-").strip()
+    file_extension = os.path.splitext(restaurant_image)[1].lower() if '.' in restaurant_image else '.jpg'
+    dir_path = os.path.join("restaurant_images")
+    os.makedirs(dir_path, exist_ok=True)
+    output_path = os.path.join(dir_path, f"{safe_restaurant_name}{file_extension}")
+
+    if os.path.exists(output_path):
+        logging.info(f"Изображение уже существует: {output_path}")
+        return output_path
+
     try:
-        page = requests.get(url)
-        page.raise_for_status()
-        soup = BeautifulSoup(page.text, "html.parser")
+        async with semaphore:
+            await asyncio.sleep(random.uniform(*FETCH_DELAY_RANGE))
+            async with session.get(restaurant_image, timeout=10) as response:
+                if response.status != 200:
+                    logging.error(f"Не удалось скачать изображение {restaurant_image} (статус {response.status})")
+                    return restaurant_image
+                img_bytes = await response.read()
+    except Exception as E:
+        logging.exception(f"Exception при скачивании изображения {restaurant_image}: {E}")
+        return restaurant_image
+
+    try:
+        async with aiofiles.open(output_path, "wb") as f:
+            await f.write(img_bytes)
+        return output_path
+    except Exception as E:
+        logging.exception(f"Ошибка при сохранении изображения {restaurant_image}: {E}")
+        return restaurant_image
+
+async def fetch_restaurant_data(url, session, semaphore):
+    try:
+        page_text = await fetch_with_delay(url, session, semaphore)
+        soup = BeautifulSoup(page_text, "html.parser")
 
         # Извлечение JSON-данных из тега <script id="__NEXT_DATA__">
         script_tag = soup.find('script', id='__NEXT_DATA__')
         json_data = script_tag.string
         dat = json.loads(json_data)
         restaurant_id = dat['props']['pageProps']['restaurant']['inner-id']
-
-        # Извлечение описания ресторана
+        title = dat['props']['pageProps']['restaurant']['title']
         descriptions = soup.find("div", class_="styles__AboutContent-sc-1q087s8-26 kcNVuQ")
         description_text = descriptions.get_text(strip=True) if descriptions else "Нет описания"
 
@@ -49,7 +86,8 @@ def fetch_restaurant_data(url):
 
         # Извлечение изображения ресторана
         restaurant_img = soup.find('img', {'itemprop': 'contentUrl'})
-        img_url = restaurant_img["src"] if restaurant_img else None
+        img_url = restaurant_img["src"]
+        img_url = await download_image(img_url, session, title, semaphore)
 
         # Извлечение информации о метро, времени работы и контактах
         metro = dat['props']['pageProps']['restaurant']['metro']
@@ -82,25 +120,18 @@ def fetch_restaurant_data(url):
         logging.error(f"Ошибка при запросе {url}: {e}")
         return None
 
-
-def fetch_all_restaurants():
-    """
-    Получает список всех ресторанов.
-    Возвращает словарь, где ключ – название ресторана, а значение – URL.
-    """
-    page = requests.get(REST_URL)
-    soup = BeautifulSoup(page.text, "html.parser")
+async def fetch_all_restaurants(session, semaphore):
+    page_text = await fetch_with_delay(REST_URL, session, semaphore)
+    soup = BeautifulSoup(page_text, "html.parser")
     all_rests = soup.find_all("a", class_="image-side")
     restaurants = {}
-
     for rest in all_rests:
         rest_name = rest.find("img").get("title")
         rest_url = BASE_URL + rest.get("href")
         restaurants[rest_name] = rest_url
-
-    # Исключаем ресторан "Кофемания Chef's", если он не нужен
     restaurants.pop("Кофемания Chef's", None)
     return restaurants
+
 async def save_restaurants_to_db(db_pool, restaurants: list):
     if not restaurants:
         return {}
@@ -159,7 +190,6 @@ async def save_restaurants_to_db(db_pool, restaurants: list):
             vine_card
         ))
 
-        # Сохраняем ссылки отдельно, используя id ресторана в качестве ключа
         restaurant_menu_link = restaurant.get("restaurant_menu", "Нет меню")
         wine_card_link = restaurant.get("vine_url", "Нет винной карты")
         links_dict[restaurant_id] = {
@@ -172,16 +202,57 @@ async def save_restaurants_to_db(db_pool, restaurants: list):
 
     return links_dict
 
-
 async def main(db_pool):
-    # Получаем список ресторанов
-    restaurants_dict = fetch_all_restaurants()
     restaurant_data_list = []
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+    connector = aiohttp.TCPConnector(ssl=False)
+    async with aiohttp.ClientSession(connector=connector) as session:
+        restaurants_dict = await fetch_all_restaurants(session, semaphore)
+        for name, url in restaurants_dict.items():
+            data = await fetch_restaurant_data(url, session, semaphore)
+            if data:
+                data["name"] = name
+                restaurant_data_list.append(data)
+                logging.info(f"Получены данные ресторана: {name}")
 
-    for name, url in restaurants_dict.items():
-        data = fetch_restaurant_data(url)
-        if data:
-            # Добавляем имя ресторана, так как его нет в данных, полученных из fetch_restaurant_data
-            data["name"] = name
-            restaurant_data_list.append(data)
-            logging.info(f"Получены данные ресторана: {name}")
+    for restaurant in restaurant_data_list:
+        logging.info("-" * 70)
+        logging.info(f"ID: {restaurant.get('id')}")
+        logging.info(f"Название: {restaurant.get('name')}")
+        logging.info(f"Описание: {restaurant.get('description')}")
+        logging.info(f"Веранда: {restaurant.get('veranda')}")
+        logging.info(f"Пеленальный столик: {restaurant.get('changing_table')}")
+        logging.info(f"Анимация: {restaurant.get('animation')}")
+        logging.info(f"Адрес: {restaurant.get('address')}")
+        logging.info(f"Метро: {restaurant.get('metro')}")
+        logging.info(f"Время работы: {restaurant.get('work_time')}")
+        logging.info(f"Контакты: {restaurant.get('contacts')}")
+        logging.info(f"Винная карта: {restaurant.get('vine')}")
+        logging.info(f"Меню: {restaurant.get('restaurant_menu')}")
+        logging.info(f"Ссылка на винную карту: {restaurant.get('vine_url')}")
+
+    links = await save_restaurants_to_db(db_pool, restaurant_data_list)
+    logging.info("Сохраненные ссылки:")
+    logging.info(links)
+    return links
+
+async def get_links(db_pool):
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+    connector = aiohttp.TCPConnector(ssl=False)
+    restaurant_data_list = []
+    async with aiohttp.ClientSession(connector=connector) as session:
+        restaurants_dict = await fetch_all_restaurants(session, semaphore)
+        for name, url in restaurants_dict.items():
+            data = await fetch_restaurant_data(url, session, semaphore)
+            if data:
+                data["name"] = name
+                restaurant_data_list.append(data)
+    links = await save_restaurants_to_db(db_pool, restaurant_data_list)
+    return links
+
+if __name__ == "__main__":
+    async def run():
+        db_pool = await asyncpg.create_pool(**DB_CONFIG, min_size=1, max_size=10)
+        await main(db_pool)
+        await db_pool.close()
+    asyncio.run(run())
